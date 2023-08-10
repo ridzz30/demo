@@ -63,6 +63,10 @@ function deleteUser(id) {
   writeUsers(filteredUsers);
 }
 
+function getAllUsers() {
+  return readUsers();
+}
+
 module.exports = {
   createUser,
   findUserByUsername,
@@ -71,4 +75,5 @@ module.exports = {
   findUserById,
   updateUser,
   deleteUser,
+  getAllUsers,
 };
