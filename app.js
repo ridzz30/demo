@@ -1,12 +1,15 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const auth = require("./auth");
+const jwt = require("jsonwebtoken");
+const { secretKey } = require("./config");
+const bcrypt = require("bcrypt");
 
 const app = express();
 app.use(bodyParser.json());
 
-// Create a new user
-app.post("/api/users", (req, res) => {
+// User Register
+app.post("/api/register", (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
     return res
@@ -33,7 +36,7 @@ app.post("/api/login", (req, res) => {
 });
 
 // Protected route
-app.get("/api/protected", (req, res) => {
+app.get("/api/users", (req, res) => {
   const token = req.header("Authorization");
   if (!token) {
     return res.status(401).json({ message: "Authorization token missing" });
@@ -42,12 +45,70 @@ app.get("/api/protected", (req, res) => {
     if (err) {
       return res.status(403).json({ message: "Invalid token" });
     }
-    res.json({ message: "Protected data" });
+    const users = auth.getAllUsers();
+    res.json(users);
   });
+});
+
+// Create User
+app.post("/api/users", (req, res) => {
+
+  const token = req.header("Authorization");
+  if (!token) {
+    return res.status(401).json({ message: "Authorization token missing" });
+  }
+  jwt.verify(token, secretKey, (err, decoded) => {
+    if (err) {
+      return res.status(403).json({ message: "Invalid token" });
+    }
+  });
+
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res
+      .status(400)
+      .json({ message: "Username and password are required" });
+  }
+  const existingUser = auth.findUserByUsername(username);
+  if (existingUser) {
+    return res.status(409).json({ message: "Username already exists" });
+  }
+  const newUser = auth.createUser(username, password);
+  res.status(201).json(newUser);
+});
+
+// Get User By Id
+app.get("/api/users/:id", (req, res) => {
+
+  const token = req.header("Authorization");
+  if (!token) {
+    return res.status(401).json({ message: "Authorization token missing" });
+  }
+  jwt.verify(token, secretKey, (err, decoded) => {
+    if (err) {
+      return res.status(403).json({ message: "Invalid token" });
+    }
+  });
+
+  const userId = req.params.id;
+
+  res.json(auth.findUserById(userId));
+
 });
 
 // Update a user's password
 app.put("/api/users/:id", (req, res) => {
+
+  const token = req.header("Authorization");
+  if (!token) {
+    return res.status(401).json({ message: "Authorization token missing" });
+  }
+  jwt.verify(token, secretKey, (err, decoded) => {
+    if (err) {
+      return res.status(403).json({ message: "Invalid token" });
+    }
+  });
+
   const userId = req.params.id;
   const { password } = req.body;
   if (!password) {
@@ -66,6 +127,17 @@ app.put("/api/users/:id", (req, res) => {
 
 // Delete a user
 app.delete("/api/users/:id", (req, res) => {
+
+  const token = req.header("Authorization");
+  if (!token) {
+    return res.status(401).json({ message: "Authorization token missing" });
+  }
+  jwt.verify(token, secretKey, (err, decoded) => {
+    if (err) {
+      return res.status(403).json({ message: "Invalid token" });
+    }
+  });
+  
   const userId = req.params.id;
   const user = auth.findUserById(userId);
   if (!user) {
