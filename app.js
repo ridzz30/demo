@@ -46,6 +46,35 @@ app.get("/api/protected", (req, res) => {
   });
 });
 
+// Update a user's password
+app.put("/api/users/:id", (req, res) => {
+  const userId = req.params.id;
+  const { password } = req.body;
+  if (!password) {
+    return res.status(400).json({ message: "New password is required" });
+  }
+
+  const user = auth.findUserById(userId);
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  user.password = bcrypt.hashSync(password, 10);
+  auth.updateUser(user);
+  res.json({ message: "Password updated successfully" });
+});
+
+// Delete a user
+app.delete("/api/users/:id", (req, res) => {
+  const userId = req.params.id;
+  const user = auth.findUserById(userId);
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+  auth.deleteUser(userId);
+  res.json({ message: "User deleted successfully" });
+});
+
 // Start the server
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {

@@ -43,9 +43,32 @@ function generateAuthToken(user) {
   return jwt.sign({ id: user.id }, secretKey, { expiresIn: "1h" });
 }
 
+function findUserById(id) {
+  const users = readUsers();
+  return users.find((user) => user.id === id);
+}
+
+function updateUser(updatedUser) {
+  const users = readUsers();
+  const index = users.findIndex((user) => user.id === updatedUser.id);
+  if (index !== -1) {
+    users[index] = updatedUser;
+    writeUsers(users);
+  }
+}
+
+function deleteUser(id) {
+  const users = readUsers();
+  const filteredUsers = users.filter((user) => user.id !== id);
+  writeUsers(filteredUsers);
+}
+
 module.exports = {
   createUser,
   findUserByUsername,
   authenticateUser,
   generateAuthToken,
+  findUserById,
+  updateUser,
+  deleteUser,
 };
